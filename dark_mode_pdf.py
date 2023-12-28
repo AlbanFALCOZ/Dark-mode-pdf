@@ -8,55 +8,70 @@ Created on Wed Dec 27 19:38:03 2023
 
 
 # import module
+import sys
+import os
+from PIL import Image
 from pdf2image import convert_from_path
+from pypdf import PdfMerger
  
  
 # Store Pdf with convert_from_path function
 images = convert_from_path('UNE ÉTUDE EN ROUGE.pdf',poppler_path=r"C:\Users\alban\OneDrive\Documents\Informatique\Python\library\poppler-23.11.0\Library\bin")
- 
-#for i in range(len(images)):
-    #print(i)
-      # Save pages as images in the pdf
-    #images[i].save('page'+ str(i) +'.jpg', 'JPEG')
 
 
 
-from PIL import Image
-from pdf2image import convert_from_path
-from random import *
-
-imagePath = 'cat.jpg'
-#pil_image_lst = convert_from_path(imagePath,poppler_path=r'C:\Users\alban\OneDrive\Documents\Informatique\Python\library\poppler-23.11.0\Library\bin') # This returns a list even for a 1 page pdf
-#pil_image = pil_image_lst[0]
-newImagePath = 'darkmode.jpg'
-#im = Image.open(images)
-#im = Image.open(pil_image)
-
-
-
-def redOrBlack (im):
-    comptPixel = 0
-    comptRedPixel = 0
+def reversed_color(im):
     newimdata = []
-    redcolor = (255,0,0)
-    blackcolor = (0,0,0)
     for color in im.getdata():
-        #if color >= (255,0,0)  :
-            #newimdata.append( redcolor )
-            #print(newimdata[0],newimdata[1],newimdata[2])
-            #comptRedPixel = comptRedPixel+1
-            #print(comptRedPixel)
-        #else:
-        newimdata.append( ((255-color[0],255-color[0],255-color[0])) )
-            #newimdata.append( (randint(0,255),randint(0,255),randint(0,255)) )
-        #comptPixel = comptPixel +1
-        #print(comptPixel)
+        newimdata.append(((255-color[0],255-color[0],255-color[0])))
     newim = Image.new(im.mode,im.size)
     newim.putdata(newimdata)
     return newim
 
-for i in range(len(images)):
-    print("Page numéro : " + str(i))
-      # Save pages as images in the pdf
-    #images[i].save('page'+ str(i) +'.jpg', 'JPEG')
-    redOrBlack(images[i]).save('page'+ str(i) +'.jpg', 'JPEG')
+
+def createEachPage(images):
+    listNameImage = []
+    for i in range(len(images)):
+        print("Page numéro : " + str(i))
+        nameImage = 'page'+ str(i) +'.pdf'
+        listNameImage.append(nameImage)
+        try :
+            reversed_color(images[i]).save(nameImage)
+        except FileNotFoundError as e :
+            print("Error : " + e.filename + " - " + e.strerror)
+            print("This error occurs if the specified file path doesn't exist. Make sure the directory structure is correct or create the directories if needed")
+        except PermissionError as e:
+            print("Error : " + e.filename + " - " + e.strerror)
+            print("You may encounter this error if you don't have the necessary permissions to write to the specified file or directory. Ensure that your script has write permissions")
+        except IOError as e :
+            print("Error : " + e.filename + " - " + e.strerror)
+            print("These errors can occur for various reasons, such as a file being open in another process or if the file is in use. Make sure the file is not being accessed by another program")
+        
+    mergePdfTogether(listNameImage)
+    
+
+def mergePdfTogether(listNameImage):
+    merger = PdfMerger()
+    for image in listNameImage :
+        try :
+            merger.append(image)
+        except FileNotFoundError as e :
+            print("Error : " + e.filename + " - " + e.strerror)
+            print("This error occurs if the specified file path doesn't exist. Make sure the directory structure is correct or create the directories if needed")
+    try :
+        merger.write("darkMode.pdf")
+    except FileNotFoundError as e :
+        print("Error : " + e.filename + " - " + e.strerror)
+        print("This error occurs if the specified file path doesn't exist. Make sure the directory structure is correct or create the directories if needed")
+    merger.close()
+    
+    deleteAllSingleFile(listNameImage)
+    
+def deleteAllSingleFile(listNameImage):
+    for image in listNameImage :   
+        try :
+            os.remove(image)
+        except OSError as e :
+            print("Error : " + e.filename + " - " + e.strerror)
+    
+createEachPage(images)
